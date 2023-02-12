@@ -1,11 +1,10 @@
 ## Debugbar for Phalcon 5
-[![Packagist License](https://poser.pugx.org/barryvdh/laravel-debugbar/license.png)](http://choosealicense.com/licenses/mit/)
-[![Latest Stable Version](https://poser.pugx.org/barryvdh/laravel-debugbar/version.png)](https://packagist.org/packages/barryvdh/laravel-debugbar)
-[![Total Downloads](https://poser.pugx.org/barryvdh/laravel-debugbar/d/total.png)](https://packagist.org/packages/barryvdh/laravel-debugbar)
+[![Packagist License](https://poser.pugx.org/nin/phalcon-debugbar/license.png)](http://choosealicense.com/licenses/mit/)
+[![Latest Stable Version](https://poser.pugx.org/nin/phalcon-debugbar/version.png)](https://packagist.org/packages/nin/phalcon-debugbar)
+[![Total Downloads](https://poser.pugx.org/nin/phalcon-debugbar/d/total.png)](https://packagist.org/packages/nin/phalcon-debugbar)
 
 This is a package to integrate [PHP Debug Bar](http://phpdebugbar.com/) with Phalcon 5.
 
-![Debugbar 3.3 Screenshot](https://user-images.githubusercontent.com/973269/79428890-196cc680-7fc7-11ea-8229-189f5eac9009.png)
 
 Note: Use the DebugBar only in development. It can slow the application down (because it has to gather data). So when experiencing slowness, try disabling some of the collectors.
 
@@ -14,7 +13,7 @@ Note: Use the DebugBar only in development. It can slow the application down (be
 Require this package with composer. It is recommended to only require the package for development.
 
 ```php
-composer require barryvdh/laravel-debugbar --dev
+composer require nin/phalcon-debugbar --dev
 ```
 
 Register a Provider in `index.php`
