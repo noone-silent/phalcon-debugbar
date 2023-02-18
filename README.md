@@ -6,6 +6,9 @@
 This is a package to integrate [PHP Debug Bar](http://phpdebugbar.com/) with Phalcon 5.
 
 
+![Phalcon 5 debugbar](https://github.com/ninhnguyen22/phalcon-debugbar/blob/master/Capture.PNG)
+
+
 Note: Use the DebugBar only in development. It can slow the application down (because it has to gather data). So when experiencing slowness, try disabling some of the collectors.
 
 ### Installation:
