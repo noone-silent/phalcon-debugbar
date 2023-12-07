@@ -1,18 +1,19 @@
 <?php
 
-namespace Nin\Debugbar\DataCollector;
+declare(strict_types=1);
+
+namespace Phalcon\Incubator\Debugbar\DataCollector;
 
 use DebugBar\DataCollector\DataCollector;
 use DebugBar\DataCollector\Renderable;
 use Phalcon\Di\DiInterface;
 use Phalcon\Support\Version;
 
+use const PHP_SAPI;
+
 class PhalconCollector extends DataCollector implements Renderable
 {
-    /**
-     * @var \Phalcon\Di\DiInterface $container
-     */
-    protected $container;
+    protected DiInterface $container;
 
     public function __construct(DiInterface $container)
     {
@@ -22,7 +23,7 @@ class PhalconCollector extends DataCollector implements Renderable
     /**
      * @return string
      */
-    public function getName()
+    public function getName(): string
     {
         return 'phalcon';
     }
@@ -30,25 +31,25 @@ class PhalconCollector extends DataCollector implements Renderable
     /**
      * @return array
      */
-    public function collect()
+    public function collect(): array
     {
         return [
-            'version' => (new Version)->get(),
-            'interface' => PHP_SAPI
+            'version'   => (new Version())->get(),
+            'interface' => PHP_SAPI,
         ];
     }
 
     /**
      * {@inheritDoc}
      */
-    public function getWidgets()
+    public function getWidgets(): array
     {
         return [
-            "phalcon_version" => [
-                "icon" => "code",
-                "tooltip" => "Phalcon Version",
-                "map" => "phalcon.version",
-                "default" => ""
+            'phalcon_version' => [
+                'icon'    => 'code',
+                'tooltip' => 'Phalcon Version',
+                'map'     => 'phalcon.version',
+                'default' => '',
             ],
         ];
     }

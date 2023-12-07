@@ -1,6 +1,8 @@
 <?php
 
-namespace Nin\Debugbar\Phalcon\View;
+declare(strict_types=1);
+
+namespace Phalcon\Incubator\Debugbar\Phalcon\View;
 
 class Profile implements \IteratorAggregate, \Serializable
 {
@@ -10,20 +12,28 @@ class Profile implements \IteratorAggregate, \Serializable
     public const MACRO = 'macro';
 
     private $baseDir;
+
     private $path;
+
     private $template;
+
     private $name;
+
     private $type;
+
     private $starts = [];
+
     private $ends = [];
+
     private $profiles = [];
+
     private $params = [];
 
     public function __construct(string $template = 'main', string $type = self::ROOT, string $name = 'main')
     {
         $this->template = $template;
         $this->type = $type;
-        $this->name = 0 === strpos($name, '__internal_') ? 'INTERNAL' : $name;
+        $this->name = str_starts_with($name, '__internal_') ? 'INTERNAL' : $name;
         $this->enter();
     }
 
@@ -107,7 +117,7 @@ class Profile implements \IteratorAggregate, \Serializable
      */
     public function getDuration(): float
     {
-        return isset($this->ends['wt']) && isset($this->starts['wt']) ? $this->ends['wt'] - $this->starts['wt'] : 0;
+        return isset($this->ends['wt'], $this->starts['wt']) ? $this->ends['wt'] - $this->starts['wt'] : 0;
     }
 
     /**
@@ -115,7 +125,7 @@ class Profile implements \IteratorAggregate, \Serializable
      */
     public function getMemoryUsage(): int
     {
-        return isset($this->ends['mu']) && isset($this->starts['mu']) ? $this->ends['mu'] - $this->starts['mu'] : 0;
+        return isset($this->ends['mu'], $this->starts['mu']) ? $this->ends['mu'] - $this->starts['mu'] : 0;
     }
 
     /**
@@ -123,7 +133,7 @@ class Profile implements \IteratorAggregate, \Serializable
      */
     public function getPeakMemoryUsage(): int
     {
-        return isset($this->ends['pmu']) && isset($this->starts['pmu']) ? $this->ends['pmu'] - $this->starts['pmu'] : 0;
+        return isset($this->ends['pmu'], $this->starts['pmu']) ? $this->ends['pmu'] - $this->starts['pmu'] : 0;
     }
 
     /**
@@ -132,8 +142,8 @@ class Profile implements \IteratorAggregate, \Serializable
     public function enter(): void
     {
         $this->starts = [
-            'wt' => microtime(true),
-            'mu' => memory_get_usage(),
+            'wt'  => microtime(true),
+            'mu'  => memory_get_usage(),
             'pmu' => memory_get_peak_usage(),
         ];
     }
@@ -144,8 +154,8 @@ class Profile implements \IteratorAggregate, \Serializable
     public function leave(): void
     {
         $this->ends = [
-            'wt' => microtime(true),
-            'mu' => memory_get_usage(),
+            'wt'  => microtime(true),
+            'mu'  => memory_get_usage(),
             'pmu' => memory_get_peak_usage(),
         ];
     }
@@ -168,7 +178,7 @@ class Profile implements \IteratorAggregate, \Serializable
 
     public function unserialize($data): void
     {
-        $this->__unserialize(unserialize($data));
+        $this->__unserialize(unserialize($data, ['allowed_classes' => null]));
     }
 
     /**
@@ -184,7 +194,6 @@ class Profile implements \IteratorAggregate, \Serializable
      */
     public function __unserialize(array $data): void
     {
-        list($this->template, $this->name, $this->type, $this->starts, $this->ends, $this->profiles) = $data;
+        [$this->template, $this->name, $this->type, $this->starts, $this->ends, $this->profiles] = $data;
     }
-
 }

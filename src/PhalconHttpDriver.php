@@ -1,28 +1,33 @@
 <?php
 
-namespace Nin\Debugbar;
+declare(strict_types=1);
 
-use Phalcon\DI\Injectable;
+namespace Phalcon\Incubator\Debugbar;
+
 use DebugBar\HttpDriverInterface;
+use Phalcon\DI\Injectable;
+use Phalcon\Http\ResponseInterface;
 
 class PhalconHttpDriver extends Injectable implements HttpDriverInterface
 {
     /**
      * {@inheritDoc}
      */
-    public function setHeaders(array $headers)
+    public function setHeaders(array $headers): void
     {
-        if ($this->response !== null) {
-            foreach ($headers as $key => $value) {
-                $this->response->setHeader($key, $value);
-            }
+        if ($this->response instanceof ResponseInterface === false) {
+            return;
+        }
+
+        foreach ($headers as $key => $value) {
+            $this->response->setHeader($key, $value);
         }
     }
 
     /**
      * {@inheritDoc}
      */
-    public function isSessionStarted()
+    public function isSessionStarted(): bool
     {
         if (!$this->session->exists()) {
             $this->session->start();
@@ -33,7 +38,7 @@ class PhalconHttpDriver extends Injectable implements HttpDriverInterface
     /**
      * {@inheritDoc}
      */
-    public function setSessionValue($name, $value)
+    public function setSessionValue($name, $value): void
     {
         $this->session->set($name, $value);
     }
@@ -45,7 +50,7 @@ class PhalconHttpDriver extends Injectable implements HttpDriverInterface
      *
      * @return boolean
      */
-    public function hasSessionValue($name)
+    public function hasSessionValue($name): bool
     {
         return $this->session->has($name);
     }
@@ -57,7 +62,7 @@ class PhalconHttpDriver extends Injectable implements HttpDriverInterface
      *
      * @return mixed
      */
-    public function getSessionValue($name)
+    public function getSessionValue($name): mixed
     {
         return $this->session->get($name);
     }
@@ -67,7 +72,7 @@ class PhalconHttpDriver extends Injectable implements HttpDriverInterface
      *
      * @param string $name
      */
-    public function deleteSessionValue($name)
+    public function deleteSessionValue($name): void
     {
         $this->session->remove($name);
     }

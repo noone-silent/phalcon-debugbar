@@ -1,53 +1,78 @@
 <?php
 
-namespace Nin\Debugbar;
+declare(strict_types=1);
 
-use Nin\Debugbar\Middlewares\InjectDebugbar;
+namespace Phalcon\Incubator\Debugbar;
+
 use Phalcon\Config\Adapter\Php;
+use Phalcon\Config\Adapter\Yaml;
+use Phalcon\Config\Config;
+use Phalcon\Config\Exception;
 use Phalcon\Di\DiInterface;
 use Phalcon\Di\ServiceProviderInterface;
-use Phalcon\Config\Config;
+use Phalcon\Events\Manager;
 use Phalcon\Http\ResponseInterface;
+use Phalcon\Incubator\Debugbar\Middlewares\InjectDebugbar;
 use Phalcon\Mvc\Application;
 use Phalcon\Mvc\Micro;
-use Phalcon\Events\Manager;
 
 class ServiceProvider implements ServiceProviderInterface
 {
+    private ?string $configPath;
+
+    public function __construct(?string $configPath = null)
+    {
+        $this->configPath = $configPath;
+        if (
+            $this->configPath !== null &&
+            (
+                file_exists($this->configPath) === false ||
+                is_readable($this->configPath) === false
+            )
+        ) {
+            throw new \RuntimeException(
+                'Config file ' . $this->configPath . ' does not exist or is not readable.'
+            );
+        }
+    }
+
     /**
      * Registers the service provider.
      *
-     * @param \Phalcon\Di\DiInterface $container
+     * @param DiInterface $di
+     *
      * @throws \Exception
      */
-    public function register(DiInterface $container): void
+    public function register(DiInterface $di): void
     {
         // Debugbar configure
         $debugbarConfig = $this->mergeConfig();
-        $container->setShared('config.debugbar', function () use ($debugbarConfig) {
+        $di->setShared('config.debugbar', static function () use ($debugbarConfig) {
             return $debugbarConfig;
         });
 
-        $this->loadRouter($container);
+        $this->loadRouter($di);
 
-        $container->setShared(PhalconDebugbar::class, function () use ($container) {
-            $debugbar = new PhalconDebugbar($container);
-            $debugbar->setHttpDriver(new PhalconHttpDriver());
-            return $debugbar;
-        });
+        $di->setShared(
+            PhalconDebugbar::class,
+            static function () use ($di) {
+                return (new PhalconDebugbar($di))
+                    ->setHttpDriver(new PhalconHttpDriver());
+            }
+        );
 
-        $this->boot($container);
+        $this->boot($di);
     }
 
-    public function boot(DiInterface $container): void
+    public function boot(DiInterface $di): void
     {
         /** @var Application|Micro $app */
-        $app = $container->getShared('app');
+        $app = $di->getShared('app');
 
         /** @var PhalconDebugbar $debugbar */
-        $debugbar = $container->getShared(PhalconDebugbar::class);
+        $debugbar = $di->getShared(PhalconDebugbar::class);
 
-        /** @var \Phalcon\Events\Manager $eventsManager */
+        /** @var Manager $eventsManager */
         $eventsManager = $app->getEventsManager();
         if (!is_object($eventsManager)) {
             $eventsManager = new Manager();
@@ -55,29 +80,37 @@ class ServiceProvider implements ServiceProviderInterface
 
         $eventsManager->attach(
             'dispatch:beforeExecuteRoute',
-            new InjectDebugbar($container)
+            new InjectDebugbar($di)
         );
 
         if ($app instanceof Micro) {
-            $eventsManager->attach('micro:beforeExecuteRoute', function () {
-                ob_start();
-            });
-            $eventsManager->attach('micro:afterExecuteRoute', function ($event, Application $app) use ($debugbar) {
-                $response = $app->response;
-                if (null === $returned = $app->getReturnedValue()) {
-                    $buffer = ob_get_clean();
-                    $response->setContent($buffer);
-                    $response = $debugbar->modifyResponse($response);
-                    $response->send();
-                } elseif (is_object($returned) && ($returned instanceof ResponseInterface)) {
-                    $debugbar->modifyResponse($returned);
+            $eventsManager->attach(
+                'micro:beforeExecuteRoute',
+                function () {
+                    ob_start();
                 }
-            });
+            );
+            $eventsManager->attach(
+                'micro:afterExecuteRoute',
+                function ($event, Micro $app) use ($debugbar) {
+                    $response = $app->response;
+                    if (null === $returned = $app->getReturnedValue()) {
+                        $buffer = ob_get_clean();
+                        $response->setContent($buffer);
+                        $response = $debugbar->modifyResponse($response);
+                        $response->send();
+                    } elseif ($returned instanceof ResponseInterface) {
+                        $debugbar->modifyResponse($returned);
+                    }
+                }
+            );
         } elseif ($app instanceof Application) {
-            $eventsManager->attach('application:beforeSendResponse',
+            $eventsManager->attach(
+                'application:beforeSendResponse',
                 function ($event, $app, $response) use ($debugbar) {
                     $debugbar->modifyResponse($response);
-                });
+                }
+            );
         }
 
         $app->setEventsManager($eventsManager);
@@ -86,36 +119,32 @@ class ServiceProvider implements ServiceProviderInterface
     /**
      * Merge config
      *
+     * @throws Exception
      * @return Config
-     * @throws \Phalcon\Config\Exception
      */
     protected function mergeConfig(): Config
     {
-        $baseConfig = new Php(__DIR__ . '/../config/debugbar.php');
-        $mergeConfigPath = $_SERVER['DOCUMENT_ROOT'] . '/../config/debugbar';
-
-        $configClassReaders = [
-            'php' => \Phalcon\Config\Adapter\Php::class,
-            'php5' => \Phalcon\Config\Adapter\Php::class,
-            'inc' => \Phalcon\Config\Adapter\Php::class,
-            'ini' => \Phalcon\Config\Adapter\Ini::class,
-            'json' => \Phalcon\Config\Adapter\Json::class,
-            'yml' => \Phalcon\Config\Adapter\Yaml::class,
-            'yaml' => \Phalcon\Config\Adapter\Yaml::class
-        ];
-
-        foreach ($configClassReaders as $extension => $classReader) {
-            if (file_exists($mergeConfigPath . '.' . $extension)) {
-                $baseConfig->merge(new $classReader($mergeConfigPath . '.' . $extension));
-                return $baseConfig;
-            }
+        $baseConfig = new Php(dirname(__FILE__, 2) . '/config/debugbar.php');
+        if ($this->configPath === null) {
+            return $baseConfig;
         }
-        return $baseConfig;
+
+        $parts = explode('.', $this->configPath);
+        $extension = end($parts);
+        if ($extension === 'php') {
+            $baseConfig->merge(new Php($this->configPath));
+            return $baseConfig;
+        }
+        if ($extension === 'yml' || $extension === 'yaml') {
+            $baseConfig->merge(new Yaml($this->configPath));
+            return $baseConfig;
+        }
+
+        throw new \RuntimeException('Only .php/.yml/.yaml config files are supported');
     }
 
-    protected function loadRouter(DiInterface $container): void
+    protected function loadRouter(DiInterface $di): void
     {
-        (new DebugbarRoutes($container))->loadRoutes();
+        (new DebugbarRoutes($di))->loadRoutes();
     }
-
 }

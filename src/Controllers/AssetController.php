@@ -1,9 +1,11 @@
 <?php
 
-namespace Nin\Debugbar\Controllers;
+declare(strict_types=1);
 
-use Nin\Debugbar\JsRenderer;
-use Nin\Debugbar\PhalconDebugbar;
+namespace Phalcon\Incubator\Debugbar\Controllers;
+
+use Phalcon\Incubator\Debugbar\JsRenderer;
+use Phalcon\Incubator\Debugbar\PhalconDebugbar;
 use Phalcon\Http\Response;
 use Phalcon\Mvc\Controller;
 

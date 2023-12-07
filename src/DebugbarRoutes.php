@@ -1,21 +1,17 @@
 <?php
 
-namespace Nin\Debugbar;
+declare(strict_types=1);
 
+namespace Phalcon\Incubator\Debugbar;
+
+use Phalcon\Config\Config;
 use Phalcon\Di\DiInterface;
 use Phalcon\Mvc\Router;
-use Phalcon\Config\Config;
 
 class DebugbarRoutes
 {
-    /**
-     * @var \Phalcon\Di\DiInterface $container
-     */
     protected DiInterface $container;
 
-    /**
-     * @var \Phalcon\Config\Config $config
-     */
     protected Config $config;
 
     public function __construct(DiInterface $container)
@@ -24,9 +20,6 @@ class DebugbarRoutes
         $this->config = $container->getShared('config.debugbar');
     }
 
-    /**
-     * @return \Phalcon\Mvc\Router
-     */
     protected function getRouter(): Router
     {
         return $this->container->getShared('router');
@@ -39,34 +32,33 @@ class DebugbarRoutes
         $urlPrefix = '/' . $routePrefix;
 
         $routes->addGet('open', [
-            'namespace' => 'Nin\Debugbar\Controllers',
+            'namespace'  => 'Phalcon\Incubator\Debugbar\Controllers',
             'controller' => 'open_handle',
-            'action' => 'handle'
+            'action'     => 'handle',
         ])->setName($routePrefix . '.open_handle.handle');
 
         $routes->addGet('clockwork/{id}', [
-            'namespace' => 'Nin\Debugbar\Controllers',
+            'namespace'  => 'Phalcon\Incubator\Debugbar\Controllers',
             'controller' => 'OpenHandle',
-            'action' => 'clockwork'
+            'action'     => 'clockwork',
         ])->setName($routePrefix . '.open_handle.clockwork');
 
         $routes->addGet($urlPrefix . '/assets/stylesheets', [
-            'namespace' => 'Nin\Debugbar\Controllers',
+            'namespace'  => 'Phalcon\Incubator\Debugbar\Controllers',
             'controller' => 'Asset',
-            'action' => 'css'
+            'action'     => 'css',
         ])->setName($routePrefix . '.assets.css');
 
         $routes->addGet($urlPrefix . '/assets/javascript', [
-            'namespace' => 'Nin\Debugbar\Controllers',
+            'namespace'  => 'Phalcon\Incubator\Debugbar\Controllers',
             'controller' => 'Asset',
-            'action' => 'js'
+            'action'     => 'js',
         ])->setName($routePrefix . '.assets.js');
 
         $routes->addDelete('cache/{key}/{tags?}', [
-            'namespace' => 'Nin\Debugbar\Controllers',
+            'namespace'  => 'Phalcon\Incubator\Debugbar\Controllers',
             'controller' => 'Cache',
-            'action' => 'delete'
+            'action'     => 'delete',
         ])->setName($routePrefix . '.cache.delete');
     }
-
 }

@@ -1,24 +1,19 @@
 <?php
 
-namespace Nin\Debugbar\DataCollector;
+namespace Phalcon\Incubator\Debugbar\DataCollector;
 
 use DebugBar\DataCollector\DataCollector;
 use DebugBar\DataCollector\Renderable;
-use Phalcon\Cache\Adapter\AdapterInterface as CacheAdapterInterface;
+use Phalcon\Cache\CacheInterface;
+use Throwable;
 
 class CacheCollector extends DataCollector implements Renderable
 {
-    /**
-     * @var bool
-     */
-    protected $collectValues;
+    protected bool $collectValues;
 
-    /**
-     * @var \Phalcon\Cache\Cache
-     */
-    protected $cache;
+    protected CacheInterface $cache;
 
-    public function __construct($collectValues, $cache)
+    public function __construct(bool $collectValues, CacheInterface $cache)
     {
         $this->collectValues = $collectValues;
         $this->cache = $cache;
@@ -27,20 +22,20 @@ class CacheCollector extends DataCollector implements Renderable
     /**
      * {@inheritDoc}
      */
-    public function collect()
+    public function collect(): array
     {
         $data = [
             'messages' => [],
-            'count' => 0,
         ];
+
         $keys = $this->cache->getAdapter()->getKeys();
         foreach ($keys as $key) {
             $value = $this->getCache($key);
             $data['messages'][] = [
-                'time' => time(),
-                'label' => 'SAVE',
+                'time'      => time(),
+                'label'     => 'SAVE',
                 'is_string' => true,
-                'message' => "[ Key => \"$key\" Value => $value ]",
+                'message'   => "[ Key => \"$key\" Value => $value ]",
             ];
         }
         $data['count'] = count($data['messages']);
@@ -48,18 +43,21 @@ class CacheCollector extends DataCollector implements Renderable
         return $data;
     }
 
-
-    protected function getCache($key)
+    protected function getCache($key): mixed
     {
         $prefix = $this->cache->getAdapter()->getPrefix();
         $key = str_replace($prefix, '', $key);
-        return $this->cache->get($key);
+        try {
+            return $this->cache->get($key);
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     /**
      * {@inheritDoc}
      */
-    public function getName()
+    public function getName(): string
     {
         return 'caches';
     }
@@ -67,19 +65,19 @@ class CacheCollector extends DataCollector implements Renderable
     /**
      * {@inheritDoc}
      */
-    public function getWidgets()
+    public function getWidgets(): array
     {
         return [
-            "caches" => [
-                'icon' => 'star',
-                "widget" => "PhpDebugBar.Widgets.MessagesWidget",
-                "map" => "caches.messages",
-                "default" => "[]"
+            'caches'       => [
+                'icon'    => 'star',
+                'widget'  => 'PhpDebugBar.Widgets.MessagesWidget',
+                'map'     => 'caches.messages',
+                'default' => '[]',
             ],
-            "caches:badge" => [
-                "map" => "caches.count",
-                "default" => "null"
-            ]
+            'caches:badge' => [
+                'map'     => 'caches.count',
+                'default' => 'null',
+            ],
         ];
     }
 }

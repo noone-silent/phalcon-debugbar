@@ -1,15 +1,17 @@
 <?php
 
-namespace Nin\Debugbar\Middlewares;
+declare(strict_types=1);
 
-use Nin\Debugbar\PhalconDebugbar;
+namespace Phalcon\Incubator\Debugbar\Middlewares;
+
+use Exception;
 use Phalcon\Di\DiInterface;
 use Phalcon\Di\Injectable;
 use Phalcon\Events\Event;
 use Phalcon\Http\Request;
+use Phalcon\Incubator\Debugbar\PhalconDebugbar;
 use Phalcon\Mvc\Application;
 use Phalcon\Mvc\Dispatcher;
-use Exception;
 use Phalcon\Mvc\Router;
 use Phalcon\Support\Version;
 
@@ -17,6 +19,7 @@ class InjectDebugbar extends Injectable
 {
     /**
      * The Route Prefix for debugbar
+     *
      * @var string
      */
     protected string $routePrefix;
@@ -28,10 +31,10 @@ class InjectDebugbar extends Injectable
      */
     protected array $except;
 
-    public function __construct(DiInterface $container)
+    public function __construct(DiInterface $di)
     {
-        $this->container = $container;
-        $config = $container->getShared('config.debugbar');
+        $this->container = $di;
+        $config = $di->getShared('config.debugbar');
 
         $this->routePrefix = $config->get('route_prefix');
         $this->except = $config->get('except')->toArray();
@@ -41,8 +44,9 @@ class InjectDebugbar extends Injectable
      * @param Event $event
      * @param Dispatcher $dispatcher
      * @param $data
-     * @return bool
+     *
      * @throws Exception
+     * @return bool
      */
     public function beforeExecuteRoute(Event $event, Dispatcher $dispatcher, $data): bool
     {
@@ -70,19 +74,22 @@ class InjectDebugbar extends Injectable
         $router->handle($request->getURI());
 
         $current = $router->getMatchedRoute();
-        if ($current) {
-            $currentName = $current->getName();
-            if (strpos($currentName, $this->routePrefix) !== false) {
-                if (method_exists($app, 'useImplicitView')) {
-                    $app->useImplicitView(false);
-                }
+        if ($current === null || $current->getName() === null) {
+            $debugbar->boot();
+            return true;
+        }
 
-                $debugbar->disable();
+        $currentName = $current->getName();
+        if (str_contains($currentName, $this->routePrefix)) {
+            if (method_exists($app, 'useImplicitView')) {
+                $app->useImplicitView(false);
             }
 
-            if ($this->inExceptArray($currentName)) {
-                $debugbar->disable();
-            }
+            $debugbar->disable();
+        }
+
+        if ($this->inExceptArray($currentName)) {
+            $debugbar->disable();
         }
 
         $debugbar->boot();
@@ -94,22 +101,21 @@ class InjectDebugbar extends Injectable
      * Determine if the request has a URI that should be ignored.
      *
      * @param string $routeName
+     *
      * @return bool
      */
-    protected function inExceptArray($routeName): bool
+    protected function inExceptArray(string $routeName): bool
     {
         foreach ($this->except as $except) {
             if ($except !== '/') {
                 $except = trim($except, '/');
             }
 
-            if (strpos($routeName, $except) !== false) {
+            if (str_contains($routeName, $except)) {
                 return true;
             }
         }
 
         return false;
     }
-
-
 }

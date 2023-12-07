@@ -1,6 +1,8 @@
 <?php
 
-namespace Nin\Debugbar\DataCollector;
+declare(strict_types=1);
+
+namespace Phalcon\Incubator\Debugbar\DataCollector;
 
 use DebugBar\Bridge\NamespacedTwigProfileCollector;
 use Phalcon\Config\Config;
@@ -8,6 +10,7 @@ use Phalcon\Config\Config;
 class ViewCollector extends NamespacedTwigProfileCollector
 {
     use Formatter;
+
     /**
      * @var int
      */
@@ -31,6 +34,7 @@ class ViewCollector extends NamespacedTwigProfileCollector
     private $config;
 
     private $renderTime = 0;
+
     private $memoryUsage = 0;
 
     /**
@@ -38,23 +42,23 @@ class ViewCollector extends NamespacedTwigProfileCollector
      *
      * @var array
      */
-    protected $editors = [
-        'sublime' => 'subl://open?url=file://%file&line=%line',
-        'textmate' => 'txmt://open?url=file://%file&line=%line',
-        'emacs' => 'emacs://open?url=file://%file&line=%line',
-        'macvim' => 'mvim://open/?url=file://%file&line=%line',
-        'phpstorm' => 'phpstorm://open?file=%file&line=%line',
-        'idea' => 'idea://open?file=%file&line=%line',
-        'vscode' => 'vscode://file/%file:%line',
-        'vscode-insiders' => 'vscode-insiders://file/%file:%line',
-        'vscode-remote' => 'vscode://vscode-remote/%file:%line',
+    protected array $editors = [
+        'sublime'                => 'subl://open?url=file://%file&line=%line',
+        'textmate'               => 'txmt://open?url=file://%file&line=%line',
+        'emacs'                  => 'emacs://open?url=file://%file&line=%line',
+        'macvim'                 => 'mvim://open/?url=file://%file&line=%line',
+        'phpstorm'               => 'phpstorm://open?file=%file&line=%line',
+        'idea'                   => 'idea://open?file=%file&line=%line',
+        'vscode'                 => 'vscode://file/%file:%line',
+        'vscode-insiders'        => 'vscode-insiders://file/%file:%line',
+        'vscode-remote'          => 'vscode://vscode-remote/%file:%line',
         'vscode-insiders-remote' => 'vscode-insiders://vscode-remote/%file:%line',
-        'vscodium' => 'vscodium://file/%file:%line',
-        'nova' => 'nova://core/open/file?filename=%file&line=%line',
-        'xdebug' => 'xdebug://%file@%line',
-        'atom' => 'atom://core/open/file?filename=%file&line=%line',
-        'espresso' => 'x-espresso://open?filepath=%file&lines=%line',
-        'netbeans' => 'netbeans://open/?f=%file:%line',
+        'vscodium'               => 'vscodium://file/%file:%line',
+        'nova'                   => 'nova://core/open/file?filename=%file&line=%line',
+        'xdebug'                 => 'xdebug://%file@%line',
+        'atom'                   => 'atom://core/open/file?filename=%file&line=%line',
+        'espresso'               => 'x-espresso://open?filepath=%file&lines=%line',
+        'netbeans'               => 'netbeans://open/?f=%file:%line',
     ];
 
     public function __construct($profile = null, $config = null)
@@ -65,7 +69,7 @@ class ViewCollector extends NamespacedTwigProfileCollector
         $this->config = $config;
     }
 
-    public function addTemplate($profile, $key)
+    public function addTemplate($profile, $key): void
     {
         $this->templates[$key] = $profile;
     }
@@ -96,41 +100,41 @@ class ViewCollector extends NamespacedTwigProfileCollector
      *
      * @return array Collected data
      */
-    public function collect()
+    public function collect(): array
     {
         $this->templateCount = $this->blockCount = $this->macroCount = 0;
         $templatesCount = count($this->templates);
 
         return [
-            'nb_templates' => $templatesCount,
-            'templates' => $this->formatTemplate(),
-            'accumulated_render_time' => $this->renderTime,
+            'nb_templates'                => $templatesCount,
+            'templates'                   => $this->formatTemplate(),
+            'accumulated_render_time'     => $this->renderTime,
             'accumulated_render_time_str' => $this->formatString($this->getDataFormatter()->formatDuration($this->renderTime)),
-            'memory_usage_str' => $this->formatString($this->getDataFormatter()->formatBytes($this->memoryUsage)),
-            'badge' => implode(
+            'memory_usage_str'            => $this->formatString($this->getDataFormatter()->formatBytes($this->memoryUsage)),
+            'badge'                       => implode(
                 '/',
                 [
-                    $templatesCount
+                    $templatesCount,
                 ]
             ),
         ];
     }
 
-    public function formatTemplate()
+    public function formatTemplate(): array
     {
         $templates = [];
         $renderTime = 0;
         $memoryUsage = 0;
         foreach ($this->templates as $key => $profile) {
             $templates[] = [
-                'name' => $profile->getName(),
-                'param_count' => count($profile->getParams()),
-                'params' => $this->formatParams($profile->getParams()),
-                'type' => $profile->getType(),
-                'render_time' => $profile->getDuration(),
+                'name'            => $profile->getName(),
+                'param_count'     => count($profile->getParams()),
+                'params'          => $this->formatParams($profile->getParams()),
+                'type'            => $profile->getType(),
+                'render_time'     => $profile->getDuration(),
                 'render_time_str' => $this->formatString($this->getDataFormatter()->formatDuration($profile->getDuration())),
-                'memory_str' => $this->formatString($this->getDataFormatter()->formatBytes($profile->getMemoryUsage())),
-                'editorLink' => $this->getEditorHref($profile->getPath(), 0),
+                'memory_str'      => $this->formatString($this->getDataFormatter()->formatBytes($profile->getMemoryUsage())),
+                'editorLink'      => $this->getEditorHref($profile->getPath(), 0),
             ];
             $renderTime += $profile->getDuration();
             $memoryUsage += $profile->getMemoryUsage();
@@ -140,7 +144,7 @@ class ViewCollector extends NamespacedTwigProfileCollector
         return $templates;
     }
 
-    protected function formatParams($params)
+    protected function formatParams(array $params): array
     {
         foreach ($params as $key => $param) {
             if ($param instanceof Config) {
@@ -158,11 +162,10 @@ class ViewCollector extends NamespacedTwigProfileCollector
      * @param string $filePath
      * @param int $line
      *
-     * @return null|string
      * @throws \InvalidArgumentException If editor resolver does not return a string
-     *
+     * @return null|string
      */
-    protected function getEditorHref($filePath, $line)
+    protected function getEditorHref(string $filePath, int $line): ?string
     {
         if (!$this->config->get('editor')) {
             return null;
@@ -177,7 +180,11 @@ class ViewCollector extends NamespacedTwigProfileCollector
 
         $filePath = $this->replaceSitesPath($filePath);
 
-        return str_replace(['%file', '%line'], [$filePath, $line], $this->editors[$this->config->get('editor')]);
+        return str_replace(
+            ['%file', '%line'],
+            [$filePath, $line],
+            $this->editors[$this->config->get('editor')]
+        );
     }
 
     /**
@@ -187,27 +194,31 @@ class ViewCollector extends NamespacedTwigProfileCollector
      *
      * @return string
      */
-    protected function replaceSitesPath($filePath)
+    protected function replaceSitesPath(string $filePath): string
     {
-        return str_replace($this->config->get('remote_sites_path'), $this->config->get('local_sites_path'), $filePath);
+        return str_replace(
+            $this->config->get('remote_sites_path'),
+            $this->config->get('local_sites_path'),
+            $filePath
+        );
     }
 
-    public function getName()
+    public function getName(): string
     {
         return 'views';
     }
 
-    public function getWidgets()
+    public function getWidgets(): array
     {
         return [
-            'views' => [
-                'icon' => 'leaf',
-                'widget' => 'PhpDebugBar.Widgets.LaravelViewTemplatesWidget',
-                'map' => 'views',
-                'default' => json_encode(['templates' => []]),
+            'views'       => [
+                'icon'    => 'leaf',
+                'widget'  => 'PhpDebugBar.Widgets.LaravelViewTemplatesWidget',
+                'map'     => 'views',
+                'default' => '{"templates":[]}',
             ],
             'views:badge' => [
-                'map' => 'views.badge',
+                'map'     => 'views.badge',
                 'default' => 0,
             ],
         ];

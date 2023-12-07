@@ -1,30 +1,23 @@
 <?php
 
-namespace Nin\Debugbar\DataCollector;
+namespace Phalcon\Incubator\Debugbar\DataCollector;
 
 use DebugBar\DataCollector\DataCollector;
 use DebugBar\DataCollector\Renderable;
 use Phalcon\Di\DiInterface;
-use Phalcon\Http\Request;
-use Phalcon\Http\Response;
+use Phalcon\Http\Message\ResponseStatusCodeInterface;
+use Phalcon\Http\RequestInterface;
+use Phalcon\Http\ResponseInterface;
 
 class RequestCollector extends DataCollector implements Renderable
 {
+    protected RequestInterface $request;
 
-    /**
-     * @var Request $request
-     */
-    protected $request;
-    /**
-     * @var Response $response
-     */
-    protected $response;
-    /**
-     * @var DiInterface
-     */
-    protected $container;
+    protected ResponseInterface $response;
 
-    public function __construct($request, $response, $container)
+    protected DiInterface $container;
+
+    public function __construct(RequestInterface $request, ResponseInterface $response, DiInterface $container)
     {
         $this->request = $request;
         $this->response = $response;
@@ -34,39 +27,38 @@ class RequestCollector extends DataCollector implements Renderable
     /**
      * {@inheritDoc}
      */
-    public function collect()
+    public function collect(): array
     {
         $request = $this->request;
         $response = $this->response;
 
-        $statusCode = $response->getStatusCode() ?: Response::STATUS_OK;
+        $statusCode = $response->getStatusCode() ?: ResponseStatusCodeInterface::STATUS_OK;
         $responseHeaders = $response->getHeaders()->toArray() ?: headers_list();
 
         $cookies = $_COOKIE;
         unset($cookies[session_name()]);
         $cookiesService = $response->getCookies();
-        if ($cookiesService) {
-            $useEncrypt = true;
-            if ($cookiesService->isUsingEncryption() && $this->container->has('crypt') && !$this->container['crypt']->getKey()) {
-                $useEncrypt = false;
-            }
-            if (!$cookiesService->isUsingEncryption()) {
-                $useEncrypt = false;
-            }
-            foreach ($cookies as $key => $vlaue) {
-                $cookies[$key] = $cookiesService->get($key)->useEncryption($useEncrypt)->getValue();
-            }
+
+        $useEncrypt = true;
+        if ($cookiesService->isUsingEncryption() && $this->container->has('crypt') && !$this->container['crypt']->getKey()) {
+            $useEncrypt = false;
+        }
+        if (!$cookiesService->isUsingEncryption()) {
+            $useEncrypt = false;
+        }
+        foreach ($cookies as $key => $value) {
+            $cookies[$key] = $cookiesService->get($key)->useEncryption($useEncrypt)->getValue();
         }
         $data = [
-            'status_code' => $statusCode,
-            'content_type' => $response->getHeaders()->get('Content-Type') ?: 'text/html',
-            'request_query' => $request->getQuery(),
-            'request_post' => $request->getPost(),
-            'request_body' => $request->getRawBody(),
-            'request_cookies' => $cookies,
-            'request_server' => $_SERVER,
+            'status_code'      => $statusCode,
+            'content_type'     => $response->getHeaders()->get('Content-Type') ?: 'text/html',
+            'request_query'    => $request->getQuery(),
+            'request_post'     => $request->getPost(),
+            'request_body'     => $request->getRawBody(),
+            'request_cookies'  => $cookies,
+            'request_server'   => $_SERVER,
             'response_headers' => $responseHeaders,
-            'response_body' => $request->isAjax() ? $response->getContent() : '',
+            'response_body'    => $request->isAjax() ? $response->getContent() : '',
         ];
 
         $data = array_filter($data);
@@ -86,8 +78,8 @@ class RequestCollector extends DataCollector implements Renderable
         }
 
         foreach ($data as $key => $var) {
-            if (!is_string($data[$key])) {
-                $data[$key] = $this->formatVar($var);
+            if (!is_string($var)) {
+                $data[$key] = $this->getDataFormatter()->formatVar($var);
             }
         }
 
@@ -97,7 +89,7 @@ class RequestCollector extends DataCollector implements Renderable
     /**
      * {@inheritDoc}
      */
-    public function getName()
+    public function getName(): string
     {
         return 'request';
     }
@@ -105,15 +97,15 @@ class RequestCollector extends DataCollector implements Renderable
     /**
      * {@inheritDoc}
      */
-    public function getWidgets()
+    public function getWidgets(): array
     {
         return [
-            "request" => [
-                "icon" => "tags",
-                "widget" => "PhpDebugBar.Widgets.VariableListWidget",
-                "map" => "request",
-                "default" => "{}"
-            ]
+            'request' => [
+                'icon'    => 'tags',
+                'widget'  => 'PhpDebugBar.Widgets.VariableListWidget',
+                'map'     => 'request',
+                'default' => '{}',
+            ],
         ];
     }
 }

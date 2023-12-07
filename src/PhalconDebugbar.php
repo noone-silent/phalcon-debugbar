@@ -1,6 +1,8 @@
 <?php
 
-namespace Nin\Debugbar;
+declare(strict_types=1);
+
+namespace Phalcon\Incubator\Debugbar;
 
 use DebugBar\Bridge\SwiftMailer\SwiftLogCollector;
 use DebugBar\Bridge\SwiftMailer\SwiftMailCollector;
@@ -12,17 +14,18 @@ use DebugBar\DataCollector\PhpInfoCollector;
 use DebugBar\DataCollector\RequestDataCollector;
 use DebugBar\DataCollector\TimeDataCollector;
 use DebugBar\DebugBar;
-use Nin\Debugbar\DataCollector\CacheCollector;
-use Nin\Debugbar\DataCollector\ConfigCollector;
-use Nin\Debugbar\DataCollector\LogsCollector;
-use Nin\Debugbar\DataCollector\PhalconCollector;
-use Nin\Debugbar\DataCollector\QueryCollector;
-use Nin\Debugbar\DataCollector\RequestCollector;
-use Nin\Debugbar\DataCollector\RouteCollector;
-use Nin\Debugbar\DataCollector\SessionCollector;
-use Nin\Debugbar\DataCollector\ViewCollector;
-use Nin\Debugbar\Events\DBQuery;
-use Nin\Debugbar\Events\ViewRender;
+use DebugBar\DebugBarException;
+use Phalcon\Incubator\Debugbar\DataCollector\CacheCollector;
+use Phalcon\Incubator\Debugbar\DataCollector\ConfigCollector;
+use Phalcon\Incubator\Debugbar\DataCollector\LogsCollector;
+use Phalcon\Incubator\Debugbar\DataCollector\PhalconCollector;
+use Phalcon\Incubator\Debugbar\DataCollector\QueryCollector;
+use Phalcon\Incubator\Debugbar\DataCollector\RequestCollector;
+use Phalcon\Incubator\Debugbar\DataCollector\RouteCollector;
+use Phalcon\Incubator\Debugbar\DataCollector\SessionCollector;
+use Phalcon\Incubator\Debugbar\DataCollector\ViewCollector;
+use Phalcon\Incubator\Debugbar\Events\DBQuery;
+use Phalcon\Incubator\Debugbar\Events\ViewRender;
 use Phalcon\Cache\Adapter\AdapterInterface as CacheAdapterInterface;
 use Phalcon\Config\Config;
 use Phalcon\Di\DiInterface;
@@ -39,12 +42,12 @@ class PhalconDebugbar extends DebugBar
     use DebugFunctions;
 
     /**
-     * @var \Phalcon\Di\DiInterface $container
+     * @var DiInterface $di
      */
-    protected DiInterface $container;
+    protected DiInterface $di;
 
     /**
-     * @var \Phalcon\Config\Config $config
+     * @var Config $config
      */
     public Config $config;
 
@@ -71,11 +74,11 @@ class PhalconDebugbar extends DebugBar
      */
     protected bool $booted = false;
 
-    public function __construct(DiInterface $container)
+    public function __construct(DiInterface $di)
     {
-        $this->container = $container;
-        $this->version = (new Version)->get();
-        $this->config = $container->getShared('config.debugbar');
+        $this->di = $di;
+        $this->version = (new Version())->get();
+        $this->config = $di->getShared('config.debugbar');
     }
 
     /**
@@ -118,14 +121,14 @@ class PhalconDebugbar extends DebugBar
      */
     public function initCollectors()
     {
-        /** @var \Nin\Debugbar\PhalconDebugbar $debugBar */
+        /** @var \Phalcon\Incubator\Debugbar\PhalconDebugbar $debugBar */
         $debugBar = $this;
 
         if ($this->shouldCollect('phpinfo', true)) {
             $this->addCollector(new PhpInfoCollector());
         }
 
-        $this->addCollector(new PhalconCollector($this->container));
+        $this->addCollector(new PhalconCollector($this->di));
 
         if ($this->shouldCollect('messages', true)) {
             $this->addCollector(new MessagesCollector());
@@ -159,7 +162,7 @@ class PhalconDebugbar extends DebugBar
 
         if ($this->shouldCollect('route')) {
             try {
-                $routeCollector = new RouteCollector($this->container);
+                $routeCollector = new RouteCollector($this->di);
                 if (!$this->hasCollector($routeCollector->getName())) {
                     $this->addCollector($routeCollector);
                 }
@@ -180,10 +183,10 @@ class PhalconDebugbar extends DebugBar
                 $logger = null;
 
                 /** Get Logger */
-                if ($this->container->has('logger')) {
-                    $logger = $this->container->get('logger');
-                } elseif ($this->container->has('log')) {
-                    $logger = $this->container->get('log');
+                if ($this->di->has('logger')) {
+                    $logger = $this->di->get('logger');
+                } elseif ($this->di->has('log')) {
+                    $logger = $this->di->get('log');
                 }
                 if ($logger) {
                     /** Get log adapters */
@@ -192,12 +195,12 @@ class PhalconDebugbar extends DebugBar
                         $this->addCollector(new LogsCollector($adapter->getName(), 'logs(' . $adapterName . ')'));
                     }
                 }
-            } catch (\Exception $e) {
+            } catch (\Throwable $exc) {
                 $this->addThrowable(
                     new Exception(
-                        'Cannot add LogsCollector to Debugbar: ' . $e->getMessage(),
-                        $e->getCode(),
-                        $e
+                        'Cannot add LogsCollector to Debugbar: ' . $exc->getMessage(),
+                        $exc->getCode(),
+                        $exc
                     )
                 );
             }
@@ -207,18 +210,18 @@ class PhalconDebugbar extends DebugBar
     }
 
     /**
-     * @throws \DebugBar\DebugBarException
+     * @throws DebugBarException
      */
-    public function attachServices()
+    public function attachServices(): void
     {
         if (!$this->isEnabled()) {
             return;
         }
 
-        if ($this->shouldCollect('cache', false) && $this->container->has('cache')) {
+        if ($this->shouldCollect('cache', false) && $this->di->has('cache')) {
             try {
                 /** @var CacheAdapterInterface $cache */
-                $cache = $this->container->get('cache');
+                $cache = $this->di->get('cache');
 
                 $collectValues = $this->config->get('options.cache.values', true);
                 $cacheCollector = new CacheCollector($collectValues, $cache);
@@ -234,17 +237,17 @@ class PhalconDebugbar extends DebugBar
             }
         }
 
-        if ($this->shouldCollect('db', true) && $this->container->has('db')) {
-            $this->attachDb($this->container->get('db'));
+        if ($this->shouldCollect('db', true) && $this->di->has('db')) {
+            $this->attachDb($this->di->get('db'));
         }
 
-        if ($this->shouldCollect('mail', true) && $this->container->has('mail')) {
-            $mailer = $this->container->get('mail');
+        if ($this->shouldCollect('mail', true) && $this->di->has('mail')) {
+            $mailer = $this->di->get('mail');
             $this->attachMailer($mailer);
         }
 
-        if ($this->shouldCollect('view', true) && $this->container->has('view')) {
-            $this->attachView($this->container['view']);
+        if ($this->shouldCollect('view', true) && $this->di->has('view')) {
+            $this->attachView($this->di['view']);
         }
 
     }
@@ -258,8 +261,8 @@ class PhalconDebugbar extends DebugBar
      * Adds a data collector
      *
      * @param DataCollectorInterface $collector
-     * @return $this|PhalconDebugbar
-     * @throws \DebugBar\DebugBarException
+     * @return PhalconDebugbar
+     * @throws DebugBarException
      */
     public function addCollector(DataCollectorInterface $collector): PhalconDebugbar
     {
@@ -283,7 +286,7 @@ class PhalconDebugbar extends DebugBar
     {
         if ($this->jsRenderer === null) {
             $this->jsRenderer = new JsRenderer($this, $baseUrl, $basePath);
-            $this->jsRenderer->setUrlGenerator($this->container->get('url'));
+            $this->jsRenderer->setUrlGenerator($this->di->get('url'));
         }
         return $this->jsRenderer;
     }
@@ -313,26 +316,26 @@ class PhalconDebugbar extends DebugBar
             return $response;
         }
 
-        if ($this->shouldCollect('config', false) && $this->container->has('config')) {
+        if ($this->shouldCollect('config', false) && $this->di->has('config')) {
             try {
-                $config = $this->container->get('config');
+                $config = $this->di->get('config');
                 $configData = $config->toArray();
                 $configCollector = new ConfigCollector($configData);
                 $this->addCollector($configCollector);
-            } catch (Exception $e) {
+            } catch (\Throwable $exc) {
                 $this->addThrowable(
                     new Exception(
-                        'Cannot add ConfigCollector to Phalcon Debugbar: ' . $e->getMessage(),
-                        $e->getCode(),
-                        $e
+                        'Cannot add ConfigCollector to Phalcon Debugbar: ' . $exc->getMessage(),
+                        $exc->getCode(),
+                        $exc
                     )
                 );
             }
         }
 
-        if ($this->shouldCollect('session') && $this->container->has('session')) {
+        if ($this->shouldCollect('session') && $this->di->has('session')) {
             try {
-                $this->addCollector(new SessionCollector($this->container->get('session')));
+                $this->addCollector(new SessionCollector($this->di->get('session')));
             } catch (\Exception $e) {
                 $this->addThrowable(
                     new Exception(
@@ -346,8 +349,8 @@ class PhalconDebugbar extends DebugBar
 
         if ($this->shouldCollect('request', true)) {
             try {
-                $requestCollector = new RequestCollector($this->container->get('request'), $response,
-                    $this->container);
+                $requestCollector = new RequestCollector($this->di->get('request'), $response,
+                                                         $this->di);
                 if (!$this->hasCollector($requestCollector->getName())) {
                     $this->addCollector($requestCollector);
                 }
@@ -380,7 +383,7 @@ class PhalconDebugbar extends DebugBar
                 $timeCollector = null;
             }
             $queryCollector = new QueryCollector($timeCollector);
-            $queryCollector->setDataFormatter(new \Nin\Debugbar\DataFormatter\QueryFormatter());
+            $queryCollector->setDataFormatter(new \Phalcon\Incubator\Debugbar\DataFormatter\QueryFormatter());
 
             if ($this->config->path('options.db.with_params')) {
                 $queryCollector->setRenderSqlWithParams(true);
@@ -418,7 +421,7 @@ class PhalconDebugbar extends DebugBar
                 $eventsManager = new Manager();
             }
 
-            $eventsManager->attach('db', new DBQuery($this->container, $queryCollector));
+            $eventsManager->attach('db', new DBQuery($this->di, $queryCollector));
         } catch (\Exception $e) {
             $this->addThrowable(
                 new Exception(
@@ -432,7 +435,7 @@ class PhalconDebugbar extends DebugBar
 
     /**
      * @param $mailer
-     * @throws \DebugBar\DebugBarException
+     * @throws DebugBarException
      */
     public function attachMailer($mailer)
     {
@@ -446,7 +449,7 @@ class PhalconDebugbar extends DebugBar
 
     /**
      * @param $view
-     * @throws \DebugBar\DebugBarException
+     * @throws DebugBarException
      */
     public function attachView($view)
     {
@@ -457,7 +460,7 @@ class PhalconDebugbar extends DebugBar
         }
 
         $collector = new ViewCollector(null, $config);
-        $eventsManager->attach('view', new ViewRender($this->container, $config, $collector));
+        $eventsManager->attach('view', new ViewRender($this->di, $config, $collector));
         $view->setEventsManager($eventsManager);
 
         $this->addCollector($collector);
@@ -467,12 +470,12 @@ class PhalconDebugbar extends DebugBar
      * Adds an exception to be profiled in the debug bar
      *
      * @param Throwable $e
-     * @throws \DebugBar\DebugBarException
+     * @throws DebugBarException
      */
     public function addThrowable(Throwable $e): void
     {
         if ($this->hasCollector('exceptions')) {
-            /** @var \DebugBar\DataCollector\ExceptionsCollector $collector */
+            /** @var ExceptionsCollector $collector */
             $collector = $this->getCollector('exceptions');
             $collector->addThrowable($e);
         }
@@ -489,7 +492,7 @@ class PhalconDebugbar extends DebugBar
 
         $renderer = $this->getJavascriptRenderer();
         if ($this->getStorage()) {
-            $url = $this->container->getShared('url');
+            $url = $this->di->getShared('url');
             $openHandlerUrl = $url->getStatic(array('for' => 'debugbar.openhandler'));
             $renderer->setOpenHandlerUrl($openHandlerUrl);
         }

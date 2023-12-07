@@ -1,72 +1,94 @@
 <?php
 
-namespace Nin\Debugbar;
+declare(strict_types=1);
 
+namespace Phalcon\Incubator\Debugbar;
+
+use Closure;
 use DebugBar\DataCollector\MessagesCollector;
-use PHPUnit\Util\Exception;
+use DebugBar\DataCollector\TimeDataCollector;
+use DebugBar\DebugBarException;
+use Phalcon\Config\Config;
+use RuntimeException;
+use Throwable;
 
 trait DebugFunctions
 {
+    /**
+     * @throws DebugBarException
+     * @return MessagesCollector
+     */
     public function messageCollector(): MessagesCollector
     {
         if (!$this->hasCollector('messages')) {
-            throw new Exception('The Phalcon Debugbar Message Collector has not been set.');
+            throw new RuntimeException('The Phalcon Debugbar Message Collector has not been set.');
         }
 
-        return $this->getCollector('messages');
+        $collector = $this->getCollector('messages');
+        if ($collector instanceof MessagesCollector === false) {
+            throw new RuntimeException('Collector is not of MessageCollector type');
+        }
+
+        return $collector;
     }
 
-    public function addMessages($messages, $label)
+    public function addMessages($messages, $label): void
     {
+        try {
+            $collector = $this->messageCollector();
+        } catch (Throwable) {
+            return;
+        }
+
         foreach ($messages as $message) {
-            if ($message instanceof \Phalcon\Config\Config) {
+            if ($message instanceof Config) {
                 $message = $message->toArray();
             }
-            $this->messageCollector()->addMessage($message, $label);
+            $collector->addMessage($message, $label);
         }
     }
 
-    public function addMessage(...$messages)
-    {
-        $this->messageCollector()->addMessages($messages, 'info');
-    }
-
-    public function info(...$messages)
+    public function addMessage(...$messages): void
     {
         $this->addMessages($messages, 'info');
     }
 
-    public function emergency(...$messages)
+    public function info(...$messages): void
+    {
+        $this->addMessages($messages, 'info');
+    }
+
+    public function emergency(...$messages): void
     {
         $this->addMessages($messages, 'emergency');
     }
 
-    public function alert(...$messages)
+    public function alert(...$messages): void
     {
         $this->addMessages($messages, 'alert');
     }
 
-    public function critical(...$messages)
+    public function critical(...$messages): void
     {
         $this->addMessages($messages, 'critical');
     }
 
-    public function error(...$messages)
+    public function error(...$messages): void
     {
         $this->addMessages($messages, 'error');
     }
 
-    public function notice(...$messages)
+    public function notice(...$messages): void
     {
         $this->addMessages($messages, 'notice');
     }
 
-    public function debug(...$messages)
+    public function debug(...$messages): void
     {
         $this->addMessages($messages, 'debug');
     }
 
-    public function log(...$messages)
+    public function log(...$messages): void
     {
         $this->addMessages($messages, 'log');
     }
@@ -75,13 +97,14 @@ trait DebugFunctions
      * Starts a measure
      *
      * @param string $name Internal name, used to stop the measure
-     * @param string $label Public name
-     * @throws \DebugBar\DebugBarException
+     * @param string|null $label Public name
+     *
+     * @throws DebugBarException
      */
-    public function startMeasure($name, $label = null): void
+    public function startMeasure(string $name, ?string $label = null): void
     {
         if ($this->hasCollector('time')) {
-            /** @var \DebugBar\DataCollector\TimeDataCollector $collector */
+            /** @var TimeDataCollector $collector */
             $collector = $this->getCollector('time');
             $collector->startMeasure($name, $label);
         }
@@ -91,13 +114,14 @@ trait DebugFunctions
      * Stop a measure
      *
      * @param string $name Internal name, used to stop the measure
-     * @param string $label Public name
-     * @throws \DebugBar\DebugBarException
+     * @param string|null $label Public name
+     *
+     * @throws DebugBarException
      */
-    public function stopMeasure($name, $label = null): void
+    public function stopMeasure(string $name, ?string $label = null): void
     {
         if ($this->hasCollector('time')) {
-            /** @var \DebugBar\DataCollector\TimeDataCollector $collector */
+            /** @var TimeDataCollector $collector */
             $collector = $this->getCollector('time');
             $collector->stopMeasure($name, $label);
         }
@@ -109,12 +133,13 @@ trait DebugFunctions
      * @param string $label
      * @param float $start
      * @param float $end
-     * @throws \DebugBar\DebugBarException
+     *
+     * @throws DebugBarException
      */
-    public function addMeasure($label, $start, $end): void
+    public function addMeasure(string $label, float $start, float $end): void
     {
         if ($this->hasCollector('time')) {
-            /** @var \DebugBar\DataCollector\TimeDataCollector $collector */
+            /** @var TimeDataCollector $collector */
             $collector = $this->getCollector('time');
             $collector->addMeasure($label, $start, $end);
         }
@@ -123,14 +148,15 @@ trait DebugFunctions
     /**
      * Utility function to measure the execution of a Closure
      *
-     * @param $label
-     * @param \Closure $closure
-     * @throws \DebugBar\DebugBarException
+     * @param string $label
+     * @param Closure $closure
+     *
+     * @throws DebugBarException
      */
-    public function measure($label, \Closure $closure): void
+    public function measure(string $label, Closure $closure): void
     {
         if ($this->hasCollector('time')) {
-            /** @var \DebugBar\DataCollector\TimeDataCollector $collector */
+            /** @var TimeDataCollector $collector */
             $collector = $this->getCollector('time');
             $collector->measure($label, $closure);
         }

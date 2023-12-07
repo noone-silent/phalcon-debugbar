@@ -1,7 +1,10 @@
 <?php
 
-namespace Barryvdh\Debugbar\DataFormatter;
+declare(strict_types=1);
 
+namespace Phalcon\Incubator\Debugbar\DataFormatter;
+
+use DateTimeInterface;
 use DebugBar\DataFormatter\DataFormatter;
 
 /**
@@ -14,6 +17,7 @@ class SimpleFormatter extends DataFormatter
 {
     /**
      * @param $data
+     *
      * @return string
      */
     public function formatVar($data)
@@ -25,24 +29,34 @@ class SimpleFormatter extends DataFormatter
      * Converts a PHP value to a string.
      *
      * @param mixed $value The PHP value
-     * @param int   $depth Only for internal usage
-     * @param bool  $deep  Only for internal usage
+     * @param int $depth Only for internal usage
+     * @param bool $deep Only for internal usage
      *
      * @return string The string representation of the given value
-     *  @author Bernhard Schussek <bschussek@gmail.com>
+     * @author Bernhard Schussek <bschussek@gmail.com>
      */
     private function exportValue($value, $depth = 1, $deep = false)
     {
         if ($value instanceof \__PHP_Incomplete_Class) {
-            return sprintf('__PHP_Incomplete_Class(%s)', $this->getClassNameFromIncomplete($value));
+            return sprintf(
+                '__PHP_Incomplete_Class(%s)',
+                $this->getClassNameFromIncomplete($value)
+            );
         }
 
         if (is_object($value)) {
             if ($value instanceof \DateTimeInterface) {
-                return sprintf('Object(%s) - %s', get_class($value), $value->format(\DateTime::ATOM));
+                return sprintf(
+                    'Object(%s) - %s',
+                    get_class($value),
+                    $value->format(DateTimeInterface::ATOM)
+                );
             }
 
-            return sprintf('Object(%s)', get_class($value));
+            return sprintf(
+                'Object(%s)',
+                get_class($value)
+            );
         }
 
         if (is_array($value)) {
@@ -52,16 +66,30 @@ class SimpleFormatter extends DataFormatter
 
             $indent = str_repeat('  ', $depth);
 
-            $a = array();
+            $a = [];
             foreach ($value as $k => $v) {
                 if (is_array($v)) {
                     $deep = true;
                 }
-                $a[] = sprintf('%s => %s', $k, $this->exportValue($v, $depth + 1, $deep));
+                $a[] = sprintf(
+                    '%s => %s',
+                    $k,
+                    $this->exportValue($v, $depth + 1, $deep)
+                );
             }
 
             if ($deep) {
-                $args = [$indent, implode(sprintf(", \n%s", $indent), $a), str_repeat('  ', $depth - 1)];
+                $args = [
+                    $indent,
+                    implode(
+                        sprintf(
+                            ", \n%s",
+                            $indent
+                        ),
+                        $a
+                    ),
+                    str_repeat('  ', $depth - 1),
+                ];
                 return sprintf("[\n%s%s\n%s]", ...$args);
             }
 
@@ -71,11 +99,19 @@ class SimpleFormatter extends DataFormatter
                 return $s;
             }
 
-            return sprintf("[\n%s%s\n]", $indent, implode(sprintf(",\n%s", $indent), $a));
+            return sprintf(
+                "[\n%s%s\n]",
+                $indent,
+                implode(sprintf(",\n%s", $indent), $a)
+            );
         }
 
         if (is_resource($value)) {
-            return sprintf('Resource(%s#%d)', get_resource_type($value), $value);
+            return sprintf(
+                'Resource(%s#%d)',
+                get_resource_type($value),
+                $value
+            );
         }
 
         if (null === $value) {
@@ -90,18 +126,18 @@ class SimpleFormatter extends DataFormatter
             return 'true';
         }
 
-        return (string) $value;
+        return (string)$value;
     }
 
     /**
      * @param \__PHP_Incomplete_Class $value
-     * @return mixed
-     * @author Bernhard Schussek <bschussek@gmail.com>
+     *
+     * @return string
      */
-    private function getClassNameFromIncomplete(\__PHP_Incomplete_Class $value)
+    private function getClassNameFromIncomplete(\__PHP_Incomplete_Class $value): string
     {
         $array = new \ArrayObject($value);
 
-        return $array['__PHP_Incomplete_Class_Name'];
+        return (string)($array['__PHP_Incomplete_Class_Name'] ?? '');
     }
 }

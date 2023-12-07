@@ -1,24 +1,26 @@
 {
-    "name": "nin/phalcon-debugbar",
+    "name": "phalcon/phalcon-debugbar",
     "description": "Integrates PHP Debug Bar with Phalcon 5.",
     "keywords": ["Phalcon", "Phalcon 5", "debugbar", "profiler", "debug"],
     "type": "library",
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "Nin\\Debugbar\\": "src/"
+            "Phalcon\\Incubator\\Debugbar\\": "src/"
         }
     },
     "authors": [
         {
-            "name": "Ninh Nghia",
-            "email": "ninhnghia2@gmail.com"
+            "name": "n[oO]ne"
         }
     ],
     "minimum-stability": "dev",
     "prefer-stable": true,
+    "require-dev": {
+      "phalcon/ide-stubs": "5.4.*"
+    },
     "require": {
         "php": "^8.0.0",
-        "maximebf/debugbar": "^1"
+        "maximebf/debugbar": "^v1.19.1"
     }
 }

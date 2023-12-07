@@ -1,18 +1,21 @@
 <?php
 
-namespace Nin\Debugbar\Events;
+declare(strict_types=1);
 
-use Nin\Debugbar\DataCollector\ViewCollector;
-use Nin\Debugbar\Phalcon\View\Profile;
+namespace Phalcon\Incubator\Debugbar\Events;
+
 use Phalcon\Config\Config;
 use Phalcon\Di\DiInterface;
 use Phalcon\Di\Injectable;
 use Phalcon\Events\Event;
+use Phalcon\Incubator\Debugbar\DataCollector\ViewCollector;
+use Phalcon\Incubator\Debugbar\Phalcon\View\Profile;
 use Phalcon\Mvc\ViewInterface;
 
 class ViewRender extends Injectable
 {
     protected ViewCollector $viewCollector;
+
     protected Config $config;
 
     public function __construct(DiInterface $container, $config, ViewCollector $viewCollector)
@@ -22,7 +25,7 @@ class ViewRender extends Injectable
         $this->viewCollector = $viewCollector;
     }
 
-    public function beforeRenderView(Event $event, ViewInterface $view)
+    public function beforeRenderView(Event $event, ViewInterface $view): void
     {
         $viewFilePath = $view->getActiveRenderPath();
         $name = $this->viewCollector->getTemplateName($viewFilePath, $view->getViewsDir());
@@ -39,7 +42,7 @@ class ViewRender extends Injectable
         $this->viewCollector->addTemplate($profile, $key);
     }
 
-    public function afterRenderView(Event $event, ViewInterface $view)
+    public function afterRenderView(Event $event, ViewInterface $view): void
     {
         $viewFilePath = $view->getActiveRenderPath();
         $name = $this->viewCollector->getTemplateName($viewFilePath, $view->getViewsDir());
@@ -51,5 +54,4 @@ class ViewRender extends Injectable
             $this->viewCollector->addTemplate($profile, $key);
         }
     }
-
 }

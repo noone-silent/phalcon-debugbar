@@ -14,9 +14,8 @@ return [
      |
      */
 
-//    'enabled' => $_ENV['DEBUGBAR_ENABLED'],
     'enabled' => true,
-    'except' => [
+    'except'  => [
         'telescope',
         'horizon',
     ],
@@ -31,30 +30,29 @@ return [
      */
 
     'collectors' => [
-        'phpinfo' => true,  // Php version
-        'messages' => true,  // Messages
-        'time' => true,  // Time Datalogger
-        'memory' => true,  // Memory usage
-        'exceptions' => true,  // Exception displayer
-        'log' => true,  // Logs from Monolog (merged in messages if enabled)
-        'cache' => true, // Display cache events
-        'config' => true, // Display config settings
-        'request' => true, // Display request settings
-        'query' => true, // Display query settings
-        'route' => true,  // Current route information
-        'views' => true,  // Views with their data
-        'db' => true,  // Show database (PDO) queries and bindings
-        'auth' => false, // Display Laravel authentication status
-        'gate' => true,  // Display Laravel Gate checks
-        'session' => true,  // Display session data
+        'phpinfo'         => true,  // Php version
+        'messages'        => true,  // Messages
+        'time'            => true,  // Time Datalogger
+        'memory'          => true,  // Memory usage
+        'exceptions'      => true,  // Exception displayer
+        'log'             => true,  // Logs from Monolog (merged in messages if enabled)
+        'cache'           => true, // Display cache events
+        'config'          => true, // Display config settings
+        'request'         => true, // Display request settings
+        'query'           => true, // Display query settings
+        'route'           => true,  // Current route information
+        'views'           => true,  // Views with their data
+        'db'              => true,  // Show database (PDO) queries and bindings
+        'auth'            => false, // Display Laravel authentication status
+        'gate'            => true,  // Display Laravel Gate checks
+        'session'         => true,  // Display session data
         'symfony_request' => true,  // Only one can be enabled..
-        'mail' => true,  // Catch mail messages
-        'events' => false, // All events fired
-        'files' => false, // Show the included files
+        'mail'            => true,  // Catch mail messages
+        'events'          => false, // All events fired
+        'files'           => false, // Show the included files
 
         'default_request' => false,  // Display models
     ],
-
 
     /*
      |--------------------------------------------------------------------------
@@ -66,35 +64,35 @@ return [
      */
 
     'options' => [
-        'auth' => [
+        'auth'  => [
             'show_name' => true,   // Also show the users name/email in the debugbar
         ],
-        'db' => [
-            'with_params' => true,
+        'db'    => [
+            'with_params'             => true,
             // Render SQL with the parameters substituted
-            'backtrace' => true,
+            'backtrace'               => true,
             // Use a backtrace to find the origin of the query in your files.
             'backtrace_exclude_paths' => [],
             // Paths to exclude from backtrace. (in addition to defaults)
-            'timeline' => false,
+            'timeline'                => false,
             // Add the queries to the timeline
-            'duration_background' => true,
+            'duration_background'     => true,
             // Show shaded background on each query relative to how long it took to execute.
-            'explain' => [                 // Show EXPLAIN output on queries
+            'explain'                 => [                 // Show EXPLAIN output on queries
                 'enabled' => false,
-                'types' => ['SELECT'],     // Deprecated setting, is always only SELECT
+                'types'   => ['SELECT'],     // Deprecated setting, is always only SELECT
             ],
-            'hints' => false,
+            'hints'                   => false,
             // Show hints for common mistakes
-            'show_copy' => false,
+            'show_copy'               => false,
             // Show copy button next to the query
         ],
-        'mail' => [
+        'mail'  => [
             'full_log' => false,
         ],
         'views' => [
-            'timeline' => false,  // Add the views to the timeline (Experimental)
-            'data' => true,    //Note: Can slow down the application, because the data can be quite large..
+            'timeline'      => false,  // Add the views to the timeline (Experimental)
+            'data'          => true,    //Note: Can slow down the application, because the data can be quite large..
 //            'data' => false,    //Note: Can slow down the application, because the data can be quite large..
             'exclude_paths' => [], // Add the paths which you don't want to appear in the views
         ],
@@ -146,7 +144,7 @@ return [
     */
 
     'remote_sites_path' => '/data/app/backend/current',
-    'local_sites_path' => 'E:\Projects\7NM\YO\01.SRC\app-yo-docker-new\cms\YMT-app-cms',
+    'local_sites_path'  => 'E:\Projects\7NM\YO\01.SRC\app-yo-docker-new\cms\YMT-app-cms',
 
     /*
      |--------------------------------------------------------------------------
@@ -178,7 +176,7 @@ return [
      | X-Requested-With with the value XMLHttpRequest (most JS libraries send this), or have application/json as a Accept header.
      */
 
-    'capture_ajax' => true,
+    'capture_ajax'    => true,
     'add_ajax_timing' => false,
 
     /*
@@ -191,5 +189,5 @@ return [
      | from trying to overcome bugs like this: http://trac.nginx.org/nginx/ticket/97
      |
      */
-    'route_prefix' => '_debugbar',
+    'route_prefix'    => '_debugbar',
 ];

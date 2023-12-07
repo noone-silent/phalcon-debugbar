@@ -1,7 +1,9 @@
 <?php
 
-namespace Nin\Debugbar;
+declare(strict_types=1);
 
-class DebugbarView {
+namespace Phalcon\Incubator\Debugbar;
 
+class DebugbarView
+{
 }

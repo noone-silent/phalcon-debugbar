@@ -1,6 +1,8 @@
 <?php
 
-namespace Nin\Debugbar\DataCollector;
+declare(strict_types=1);
+
+namespace Phalcon\Incubator\Debugbar\DataCollector;
 
 use Phalcon\Db\Result\Pdo;
 use Phalcon\Forms\Element;

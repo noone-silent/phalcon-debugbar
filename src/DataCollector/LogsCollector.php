@@ -1,14 +1,16 @@
 <?php
 
-namespace Nin\Debugbar\DataCollector;
+declare(strict_types=1);
+
+namespace Phalcon\Incubator\Debugbar\DataCollector;
 
 use DebugBar\DataCollector\MessagesCollector;
 
 class LogsCollector extends MessagesCollector
 {
-    protected $lines = 124;
+    protected int $lines = 124;
 
-    public function __construct($path = null, $name = 'logs')
+    public function __construct(?string $path = null, string $name = 'logs')
     {
         parent::__construct($name);
 
@@ -20,9 +22,9 @@ class LogsCollector extends MessagesCollector
      *
      * @param string $path
      *
-     * @return array
+     * @return void
      */
-    public function getStorageLogs($path)
+    public function getStorageLogs(string $path): void
     {
         if (!file_exists($path)) {
             return;
@@ -39,32 +41,34 @@ class LogsCollector extends MessagesCollector
     /**
      * By Ain Tohvri (ain)
      * http://tekkie.flashbit.net/php/tail-functionality-in-php
+     *
      * @param string $file
      * @param int $lines
+     *
      * @return array
      */
-    protected function tailFile($file, $lines)
+    protected function tailFile(string $file, int $lines)
     {
-        $handle = fopen($file, "r");
-        $linecounter = $lines;
+        $handle = fopen($file, 'rb');
+        $lineCounter = $lines;
         $pos = -2;
         $beginning = false;
         $text = [];
-        while ($linecounter > 0) {
-            $t = " ";
-            while ($t != "\n") {
-                if (fseek($handle, $pos, SEEK_END) == -1) {
+        while ($lineCounter > 0) {
+            $t = ' ';
+            while ($t !== "\n") {
+                if (fseek($handle, $pos, SEEK_END) === -1) {
                     $beginning = true;
                     break;
                 }
                 $t = fgetc($handle);
                 $pos--;
             }
-            $linecounter--;
+            $lineCounter--;
             if ($beginning) {
                 rewind($handle);
             }
-            $text[$lines - $linecounter - 1] = fgets($handle);
+            $text[$lines - $lineCounter - 1] = fgets($handle);
             if ($beginning) {
                 break;
             }
@@ -77,11 +81,12 @@ class LogsCollector extends MessagesCollector
      * Search a string for log entries
      *
      * @param array $lines
+     *
      * @return array
      */
-    public function getLogs($lines)
+    public function getLogs(array $lines): array
     {
-        $pattern = "/\[(\S+)\]\[(\S+)\]+/";
+        $pattern = '/\[(\S+)]\[(\S+)]+/';
         $log = [];
         $tmpL = 0;
         foreach ($lines as $key => $line) {
@@ -97,8 +102,6 @@ class LogsCollector extends MessagesCollector
                 $log[$tmpL]['stack'] .= $line;
             }
         }
-        $log = array_reverse($log);
-        return $log;
+        return array_reverse($log);
     }
-
 }

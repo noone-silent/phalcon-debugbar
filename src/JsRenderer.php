@@ -1,20 +1,24 @@
 <?php
 
-namespace Nin\Debugbar;
+declare(strict_types=1);
+
+namespace Phalcon\Incubator\Debugbar;
 
 use DebugBar\DebugBar;
 use DebugBar\JavascriptRenderer;
+use Phalcon\Mvc\Url;
 
 class JsRenderer extends JavascriptRenderer
 {
     // Use XHR handler by default, instead of jQuery
     protected $ajaxHandlerBindToJquery = false;
+
     protected $ajaxHandlerBindToXHR = true;
 
     /**
-     * @var \Phalcon\Mvc\Url $url
+     * @var Url|null $url
      */
-    protected $url;
+    protected ?Url $url = null;
 
     public function __construct(DebugBar $debugBar, $baseUrl = null, $basePath = null)
     {
@@ -25,7 +29,6 @@ class JsRenderer extends JavascriptRenderer
         $this->jsFiles['laravel-sql'] = __DIR__ . '/Resources/sqlqueries/widget.js';
         $this->jsFiles['laravel-cache'] = __DIR__ . '/Resources/cache/widget.js';
         $this->jsFiles['laravel-view'] = __DIR__ . '/Resources/templates/widget.js';
-
         /*$theme = config('debugbar.theme', 'auto');
         switch ($theme) {
             case 'dark':
@@ -41,9 +44,9 @@ class JsRenderer extends JavascriptRenderer
     /**
      * Set the URL Generator
      *
-     * @param \Phalcon\Mvc\Url $url
+     * @param Url $url
      */
-    public function setUrlGenerator($url)
+    public function setUrlGenerator(Url $url): void
     {
         $this->url = $url;
     }
@@ -62,10 +65,10 @@ class JsRenderer extends JavascriptRenderer
         $url = $this->url;
         $baseUri = $url->getBaseUri();
         $cssRoute = $baseUri . ltrim($url->getStatic(['for' => $prefixRoute . '.assets.css']),
-                '/') . '?v=' . $this->getModifiedTime('css');
+                                     '/') . '?v=' . $this->getModifiedTime('css');
 
         $jsRoute = $baseUri . ltrim($url->getStatic(['for' => $prefixRoute . '.assets.js']),
-                '/') . '?v=' . $this->getModifiedTime('js');
+                                    '/') . '?v=' . $this->getModifiedTime('js');
 
         $html = '<link rel="stylesheet" type="text/css" property="stylesheet" href="' . $cssRoute . '" data-turbolinks-eval="false" data-turbo-eval="false" />';
         $html .= '<script src="' . $jsRoute . '" data-turbolinks-eval="false" data-turbo-eval="false"></script>';
@@ -95,6 +98,7 @@ class JsRenderer extends JavascriptRenderer
      * Get the last modified time of any assets.
      *
      * @param string $type 'js' or 'css'
+     *
      * @return int
      */
     protected function getModifiedTime($type): int
@@ -115,6 +119,7 @@ class JsRenderer extends JavascriptRenderer
      * Return assets as a string
      *
      * @param string $type 'js' or 'css'
+     *
      * @return string
      */
     public function dumpAssetsToString($type): string
@@ -134,6 +139,7 @@ class JsRenderer extends JavascriptRenderer
      *
      * @param string|array $uri
      * @param string $root
+     *
      * @return string|array
      */
     protected function makeUriRelativeTo($uri, $root)
@@ -150,8 +156,10 @@ class JsRenderer extends JavascriptRenderer
             return $uris;
         }
 
-        if (substr($uri ?? '', 0, 1) === '/' || preg_match('/^([a-zA-Z]+:\/\/|[a-zA-Z]:\/|[a-zA-Z]:\\\)/',
-                $uri ?? '')) {
+        if (substr($uri ?? '', 0, 1) === '/' || preg_match(
+                '/^([a-zA-Z]+:\/\/|[a-zA-Z]:\/|[a-zA-Z]:\\\)/',
+                $uri ?? ''
+            )) {
             return $uri;
         }
         return rtrim($root, '/') . "/$uri";

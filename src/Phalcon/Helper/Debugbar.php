@@ -1,9 +1,11 @@
 <?php
 
-namespace Nin\Debugbar\Phalcon\Helper;
+declare(strict_types=1);
 
-use Nin\Debugbar\PhalconDebugbar;
+namespace Phalcon\Incubator\Debugbar\Phalcon\Helper;
+
 use Phalcon\Di\Di;
+use Phalcon\Incubator\Debugbar\PhalconDebugbar;
 
 /**
  * Class Debug
@@ -21,30 +23,28 @@ use Phalcon\Di\Di;
  * @method static void addMeasure($label, $start, $end)
  * @method static void measure($label, \Closure $closure)
  * @method static void addThrowable(\Throwable $e)
- * @package Nin\Debugbar\Phalcon\Helper
+ *
+ * @package Phalcon\Incubator\Debugbar\Phalcon\Helper
  */
 class Debugbar
 {
-    protected static function getDebugAccessor(): string
-    {
-        return PhalconDebugbar::class;
-    }
-
     protected static function resolveDebugInstance()
     {
-        $instance = self::getDebugAccessor();
-        if (is_object($instance)) {
-            return $instance;
-        }
-
         /**
          * Get from container
          */
-        $container = Di::getDefault();
-        if (!$container->has($instance)) {
-            throw new \Exception('The ' . $instance . ' has not been set.');
+        $di = Di::getDefault();
+        if ($di === null) {
+            throw new \RuntimeException('The di has not been set.');
         }
-        return $container->get($instance);
+
+        if (!$di->has(PhalconDebugbar::class)) {
+            throw new \RuntimeException(
+                'The ' . PhalconDebugbar::class . ' has not been set.'
+            );
+        }
+
+        return $di->get(PhalconDebugbar::class);
     }
 
     public static function __callStatic(string $method, $args)
@@ -52,10 +52,9 @@ class Debugbar
         $instance = static::resolveDebugInstance();
 
         if (!$instance) {
-            throw new \Exception('The Debug root has not been set.');
+            throw new \RuntimeException('The Debug root has not been set.');
         }
 
         return $instance->$method(...$args);
     }
-
 }

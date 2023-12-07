@@ -1,6 +1,6 @@
 <?php
 
-namespace Nin\Debugbar\DataCollector;
+namespace Phalcon\Incubator\Debugbar\DataCollector;
 
 use DebugBar\DataCollector\PDO\PDOCollector;
 use DebugBar\DataCollector\TimeDataCollector;
